@@ -58,8 +58,9 @@ export async function POST(request: Request) {
       data: {
         agentId: client.agentId,
         action: 'UPDATE_CLIENT_PREFERENCES',
-        clientId,
-        metadata: {
+        resourceType: 'ClientPreferences',
+        resourceId: clientId,
+        newValue: {
           updatedAt: new Date().toISOString(),
         },
       },

@@ -57,7 +57,7 @@ export async function POST(request: Request) {
         action: 'CREATE_CHECKLIST',
         resourceType: 'ChecklistTemplate',
         resourceId: checklist.id,
-        metadata: {
+        newValue: {
           createdAt: new Date().toISOString(),
         },
       },

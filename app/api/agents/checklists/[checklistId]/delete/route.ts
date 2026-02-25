@@ -63,7 +63,7 @@ export async function DELETE(
         action: 'DELETE_CHECKLIST',
         resourceType: 'ChecklistTemplate',
         resourceId: checklistId,
-        metadata: {
+        newValue: {
           deletedAt: new Date().toISOString(),
           checklistName: checklist.name,
         },
