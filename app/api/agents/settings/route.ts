@@ -30,7 +30,7 @@ export async function GET() {
     return Response.json({
       workspaceName: agent.workspaceName,
       mlsIntegrationEnabled: agent.mlsIntegrationEnabled,
-      mlsProvider: agent.featureFlags?.mlsProvider || null,
+      mlsProvider: (agent.featureFlags as { mlsProvider?: string | null })?.mlsProvider || null,
     });
   } catch (error) {
     console.error('Get settings error:', error);
@@ -80,6 +80,7 @@ export async function PUT(request: Request) {
     return Response.json({
       workspaceName: updatedAgent.workspaceName,
       mlsIntegrationEnabled: updatedAgent.mlsIntegrationEnabled,
+      mlsProvider: (updatedAgent.featureFlags as { mlsProvider?: string | null })?.mlsProvider || null,
     });
   } catch (error) {
     console.error('Update settings error:', error);
