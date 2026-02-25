@@ -3,9 +3,10 @@ import { prisma } from '@/lib/db';
 
 export async function GET(
   request: Request,
-  { params }: { params: { clientId: string } }
+  { params }: { params: Promise<{ clientId: string }> }
 ) {
   try {
+    const { clientId } = await params;
     const { userId } = await auth();
 
     if (!userId) {
@@ -28,7 +29,7 @@ export async function GET(
 
     const client = await prisma.client.findFirst({
       where: {
-        id: params.clientId,
+        id: clientId,
         agentId: agent.id,
       },
       include: {

@@ -2,10 +2,10 @@ import { prisma } from '@/lib/db';
 
 export async function GET(
   request: Request,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const token = params.token;
+    const { token } = await params;
 
     const onboardingLink = await prisma.clientOnboardingLink.findUnique({
       where: { token },
