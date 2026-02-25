@@ -1,0 +1,310 @@
+// Real Estate Agent Assistant - Prisma Schema
+// Designed for agent account system, client onboarding, preferences, and readiness tracking
+// All data ownership is transparent: agents own client data, clients own their intake data
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ AGENT / WORKSPACE ============
+
+model Agent {
+  id                    String   @id @default(cuid())
+  clerkUserId           String   @unique // Clerk user ID for auth
+  email                 String   @unique
+  firstName             String
+  lastName              String
+  brokerage             String?  // Agent's brokerage name
+  licenseNumber         String?  // Real estate license number
+  phoneNumber           String?
+
+  // Workspace settings
+  workspaceName         String?  @default("My Workspace")
+  mlsIntegrationEnabled Boolean  @default(false)
+  featureFlags          Json     @default("{}")  // Feature flags per agent
+
+  // Relations
+  clients               Client[]
+  intakeTemplates       IntakeTemplate[]
+  checklistTemplates    ChecklistTemplate[]
+  mlsCredentials        MlsIntegration?
+  auditLogs             AuditLog[]
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ============ CLIENT MANAGEMENT ============
+
+model Client {
+  id                    String   @id @default(cuid())
+  agentId               String
+  agent                 Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  // Client identity
+  firstName             String
+  lastName              String
+  email                 String
+  phoneNumber           String?
+
+  // Client status
+  status                ClientStatus @default(PROSPECT)  // PROSPECT, ACTIVE, INACTIVE, CLOSED
+  onboardingCompleted   Boolean  @default(false)
+  onboardingCompletedAt DateTime?
+
+  // Relationships
+  intakeResponses       IntakeResponse[]
+  preferences           ClientPreferences?
+  documentChecklist     DocumentChecklist?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([agentId, email])
+}
+
+enum ClientStatus {
+  PROSPECT
+  ACTIVE
+  INACTIVE
+  CLOSED
+}
+
+model ClientOnboardingLink {
+  id                    String   @id @default(cuid())
+  agentId               String
+  clientId              String?  // Populated after client clicks link
+  token                 String   @unique  // Unique token for QR/link
+
+  // Link expiration
+  expiresAt             DateTime
+  isUsed                Boolean  @default(false)
+  usedAt                DateTime?
+
+  createdAt             DateTime @default(now())
+
+  @@index([agentId, token])
+}
+
+// ============ INTAKE & QUESTIONNAIRE ============
+
+model IntakeTemplate {
+  id                    String   @id @default(cuid())
+  agentId               String
+  agent                 Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  name                  String
+  description           String?
+  isDefault             Boolean  @default(false)
+
+  questions             IntakeQuestion[]
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model IntakeQuestion {
+  id                    String   @id @default(cuid())
+  templateId            String
+  template              IntakeTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  questionText          String
+  questionType          QuestionType  // TEXT, MULTIPLE_CHOICE, CHECKBOX, DROPDOWN, NUMERIC, DATE
+  order                 Int
+  isRequired            Boolean  @default(true)
+
+  // Branching logic: show this question if another response matches condition
+  conditionalLogic      Json?     // { parentQuestionId: "", matchValue: "" }
+
+  // Options for multiple choice, checkbox, dropdown
+  options               String[]  @default([])
+
+  // Metadata
+  fieldMapping          String?   // Maps to ClientPreferences field for auto-fill
+  helpText              String?
+
+  responses             IntakeResponse[]
+
+  @@index([templateId])
+}
+
+enum QuestionType {
+  TEXT
+  MULTIPLE_CHOICE
+  CHECKBOX
+  DROPDOWN
+  NUMERIC
+  DATE
+}
+
+model IntakeResponse {
+  id                    String   @id @default(cuid())
+  clientId              String
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  questionId            String
+  question              IntakeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  answer                String    // JSON for complex answers
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([clientId, questionId])
+  @@index([clientId])
+}
+
+// ============ CLIENT PREFERENCES ============
+
+model ClientPreferences {
+  id                    String   @id @default(cuid())
+  clientId              String   @unique
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  // Property type preferences
+  propertyType          String[]  @default([]) // SINGLE_FAMILY, CONDO, MULTI_FAMILY, COMMERCIAL, etc.
+
+  // Price range
+  minPrice              Float?
+  maxPrice              Float?
+
+  // Location preferences
+  desiredAreas          String[]  @default([])
+
+  // Lifestyle preferences
+  schoolDistricts       String[]  @default([])
+  hasPool               Boolean?
+  parkingRequired       Int?
+  petFriendly           Boolean?
+
+  // Investment (if applicable)
+  isInvestment          Boolean   @default(false)
+  targetCashFlow        Float?
+
+  // Timeline
+  desiredMoveDate       DateTime?
+  flexibilityLevel      String?   // HIGH, MEDIUM, LOW
+
+  // Notes
+  additionalNotes       String?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ============ DOCUMENT READINESS ============
+
+model ChecklistTemplate {
+  id                    String   @id @default(cuid())
+  agentId               String
+  agent                 Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  name                  String
+  description           String?
+  isDefault             Boolean  @default(false)
+
+  items                 ChecklistTemplateItem[]
+  checklists            DocumentChecklist[]
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model ChecklistTemplateItem {
+  id                    String   @id @default(cuid())
+  templateId            String
+  template              ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  name                  String
+  description           String?
+  order                 Int
+
+  items                 DocumentChecklistItem[]
+
+  @@index([templateId])
+}
+
+model DocumentChecklist {
+  id                    String   @id @default(cuid())
+  clientId              String   @unique
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  templateId            String
+  template              ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  items                 DocumentChecklistItem[]
+
+  completionPercentage  Int      @default(0)
+  isComplete            Boolean  @default(false)
+  completedAt           DateTime?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model DocumentChecklistItem {
+  id                    String   @id @default(cuid())
+  checklistId           String
+  checklist             DocumentChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  templateItemId        String
+  templateItem          ChecklistTemplateItem @relation(fields: [templateItemId], references: [id], onDelete: Cascade)
+
+  isCompleted           Boolean  @default(false)
+  completedAt           DateTime?
+  notes                 String?
+
+  @@unique([checklistId, templateItemId])
+  @@index([checklistId])
+}
+
+// ============ MLS INTEGRATION (OPTIONAL, MODULAR) ============
+
+model MlsIntegration {
+  id                    String   @id @default(cuid())
+  agentId               String   @unique
+  agent                 Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  // MLS provider type
+  mlsProvider           String    // NAR_MLS, REGIONAL_MLS, etc.
+
+  // Encrypted credentials (NEVER store in plaintext)
+  credentialsEncrypted  String    // Encrypted API key / token
+
+  // Integration settings
+  isActive              Boolean   @default(false)
+  syncFrequency         String?   @default("DAILY")  // HOURLY, DAILY, WEEKLY
+  lastSyncAt            DateTime?
+
+  // Feature flags
+  syncBuyerListings     Boolean   @default(false)
+  syncSellerListings    Boolean   @default(false)
+  autoMatchListings     Boolean   @default(false)  // Auto-match clients to listings
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ============ AUDIT & COMPLIANCE ============
+
+model AuditLog {
+  id                    String   @id @default(cuid())
+  agentId               String
+  agent                 Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  action                String    // CREATE_CLIENT, UPDATE_PREFERENCES, EXPORT_DATA, etc.
+  resourceType          String    // Client, IntakeResponse, ClientPreferences, etc.
+  resourceId            String
+
+  oldValue               Json?    // For tracking changes
+  newValue               Json?
+
+  createdAt             DateTime @default(now())
+
+  @@index([agentId, resourceType])
+}

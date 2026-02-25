@@ -1,0 +1,40 @@
+{
+  "name": "real-estate-agent-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^6.38.2",
+    "@hookform/resolvers": "^3.3.4",
+    "@prisma/client": "^5.20.0",
+    "@tailwindcss/typography": "^0.5.19",
+    "next": "16.1.6",
+    "qrcode.react": "^4.2.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "^7.51.3",
+    "sanity-plugin-media": "^4.1.1",
+    "uuid": "^9.0.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/uuid": "^9.0.7",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "prisma": "^5.20.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
