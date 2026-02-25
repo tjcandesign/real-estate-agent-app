@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       },
     });
 
-    return Response.json({ id: checklist.id, ...checklist });
+    return Response.json(checklist);
   } catch (error) {
     console.error('Create checklist from template error:', error);
     return new Response(JSON.stringify({ error: 'Internal server error', details: error instanceof Error ? error.message : '' }), {
