@@ -1,0 +1,43 @@
+================================================================================
+REAL ESTATE AGENT APP - VERCEL ENVIRONMENT VARIABLES
+================================================================================
+
+Copy and paste these into Vercel Settings → Environment Variables
+
+DATABASE_URL
+postgresql://postgres:$WqKYtbz3%404wpKe@db.wqpffqvczjsjkwyojhzz.supabase.co:5432/postgres
+
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+pk_test_Z2xvcmlvdXMtaG9ybmV0LTExLmNsZXJrLmFjY291bnRzLmRldiQ
+
+CLERK_SECRET_KEY
+sk_test_dU26TOdNqlkTYkh8p8iiNtaR2f84aaZlVfS5Kcl6DR
+
+NEXT_PUBLIC_CLERK_SIGN_IN_URL
+/agents/sign-in
+
+NEXT_PUBLIC_CLERK_SIGN_UP_URL
+/agents/sign-up
+
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL
+/agents/dashboard
+
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
+/agents/onboarding
+
+NEXT_PUBLIC_APP_URL
+[UPDATE AFTER FIRST DEPLOY - Use your Vercel URL]
+
+================================================================================
+DEPLOYMENT STEPS:
+================================================================================
+
+1. Go to https://vercel.com/dashboard
+2. Click "Add New" → "Project"
+3. Import GitHub repo: tjcandesign/real-estate-agent-app
+4. Add all environment variables from above
+5. Click "Deploy"
+6. After deployment completes, update NEXT_PUBLIC_APP_URL with your Vercel URL
+7. Redeploy from Deployments tab
+
+================================================================================
