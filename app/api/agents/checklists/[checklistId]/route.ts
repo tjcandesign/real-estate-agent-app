@@ -124,14 +124,14 @@ export async function PUT(
 
     // Delete all existing items and recreate (simplest approach for reordering)
     await prisma.checklistTemplateItem.deleteMany({
-      where: { checklistTemplateId: checklistId },
+      where: { templateId: checklistId },
     });
 
     // Create new items
     if (items && items.length > 0) {
       await prisma.checklistTemplateItem.createMany({
         data: items.map((item, index) => ({
-          checklistTemplateId: checklistId,
+          templateId: checklistId,
           name: item.name,
           order: index,
         })),
