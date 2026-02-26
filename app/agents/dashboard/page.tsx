@@ -127,7 +127,7 @@ export default function AgentDashboard() {
           <>
             {/* Top Stats Row - Compact */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white rounded-xl border border-slate-100 p-4 hover:shadow-md transition">
+              <Link href="/agents/clients" className="bg-white rounded-xl border border-slate-100 p-4 hover:shadow-md hover:border-blue-200 transition block group cursor-pointer">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,11 +135,11 @@ export default function AgentDashboard() {
                     </svg>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-slate-900">{dashboardData.clientCount}</div>
+                    <div className="text-2xl font-bold text-slate-900 group-hover:text-blue-700 transition">{dashboardData.clientCount}</div>
                     <div className="text-xs text-slate-500">Total Clients</div>
                   </div>
                 </div>
-              </div>
+              </Link>
 
               <div className="bg-white rounded-xl border border-slate-100 p-4 hover:shadow-md transition">
                 <div className="flex items-center gap-3">
@@ -258,9 +258,39 @@ export default function AgentDashboard() {
               </div>
             </div>
 
-            {/* Bottom Row: Recent Activity + Quick Actions */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Recent Activity */}
+            {/* Bottom Row: Quick Actions + Pipeline (left) | Recent Clients (right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left column: Quick Actions */}
+              <div className="lg:col-span-2 space-y-3">
+                <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider px-1">Quick Actions</h2>
+                {[
+                  { href: '/agents/clients/new', label: 'Add New Client', desc: 'Create a client and generate onboarding link or QR code', icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z', iconBg: 'bg-green-100', iconColor: 'text-green-600' },
+                  { href: '/agents/clients/import', label: 'Import Clients', desc: 'Upload a CSV or paste from a spreadsheet to onboard in bulk', icon: 'M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12', iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
+                  { href: '/agents/checklists', label: 'Manage Checklists', desc: 'Create and edit readiness checklists for your clients', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', iconBg: 'bg-purple-100', iconColor: 'text-purple-600' },
+                  { href: '/agents/settings', label: 'Account Settings', desc: 'Configure your profile, MLS integration, and preferences', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', iconBg: 'bg-slate-100', iconColor: 'text-slate-600' },
+                ].map((action) => (
+                  <Link
+                    key={action.href}
+                    href={action.href}
+                    className="flex items-center gap-4 bg-white rounded-xl border border-slate-100 p-4 hover:shadow-md hover:border-blue-200 transition-all group"
+                  >
+                    <div className={`w-11 h-11 ${action.iconBg} rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition`}>
+                      <svg className={`w-5 h-5 ${action.iconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={action.icon} />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-slate-900 group-hover:text-blue-700 transition">{action.label}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{action.desc}</div>
+                    </div>
+                    <svg className="w-5 h-5 text-slate-300 group-hover:text-blue-500 transition flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Right column: Recent Clients */}
               <div className="bg-white rounded-xl border border-slate-100 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold text-slate-900">Recent Clients</h2>
@@ -306,33 +336,6 @@ export default function AgentDashboard() {
                     </Link>
                   </div>
                 )}
-              </div>
-
-              {/* Quick Actions */}
-              <div className="bg-white rounded-xl border border-slate-100 p-6">
-                <h2 className="text-lg font-bold text-slate-900 mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { href: '/agents/clients', label: 'View Clients', desc: 'Manage client list', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z', color: 'blue' },
-                    { href: '/agents/clients/new', label: 'Add Client', desc: 'Start onboarding', icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z', color: 'green' },
-                    { href: '/agents/checklists', label: 'Checklists', desc: 'Track readiness', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'purple' },
-                    { href: '/agents/settings', label: 'Settings', desc: 'Configure app', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', color: 'slate' },
-                  ].map((action) => (
-                    <Link
-                      key={action.href}
-                      href={action.href}
-                      className={`group p-4 rounded-xl border border-slate-100 hover:shadow-md hover:border-${action.color}-200 transition-all`}
-                    >
-                      <div className={`w-9 h-9 bg-${action.color}-50 rounded-lg flex items-center justify-center mb-3 group-hover:bg-${action.color}-100 transition`}>
-                        <svg className={`w-5 h-5 text-${action.color}-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={action.icon} />
-                        </svg>
-                      </div>
-                      <div className="text-sm font-semibold text-slate-900">{action.label}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{action.desc}</div>
-                    </Link>
-                  ))}
-                </div>
               </div>
             </div>
           </>
