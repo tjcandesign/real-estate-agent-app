@@ -53,7 +53,12 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Dashboard data error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(JSON.stringify({
+      error: 'Internal server error',
+      details: errorMessage,
+      hasDbUrl: !!process.env.DATABASE_URL,
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
