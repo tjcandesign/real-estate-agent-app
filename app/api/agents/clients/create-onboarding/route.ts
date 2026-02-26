@@ -16,9 +16,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { firstName, lastName, email, phoneNumber } = body;
 
-    // Validate input
-    if (!firstName || !lastName || !email) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+    // Validate input — only first name is truly required
+    if (!firstName) {
+      return new Response(JSON.stringify({ error: 'First name is required' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
