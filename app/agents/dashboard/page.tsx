@@ -2,14 +2,52 @@
 
 import { useAuth } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
-import { prisma } from '@/lib/db';
 import Link from 'next/link';
+
+interface RecentClient {
+  id: string;
+  name: string;
+  status: string;
+  onboardingCompleted: boolean;
+  updatedAt: string;
+}
 
 interface DashboardData {
   clientCount: number;
   activeClientsCount: number;
+  prospectCount: number;
+  closedCount: number;
   onboardingInProgress: number;
+  dealsThisMonth: number;
+  dealsLastMonth: number;
+  pipeline: {
+    prospect: number;
+    active: number;
+    onboarding: number;
+    closed: number;
+  };
+  industryAverages: {
+    avgDealsPerMonth: number;
+    avgConversionRate: number;
+    avgDaysToClose: number;
+  };
+  conversionRate: number;
+  recentClients: RecentClient[];
 }
+
+const statusColors: Record<string, string> = {
+  PROSPECT: 'bg-yellow-100 text-yellow-800',
+  ACTIVE: 'bg-green-100 text-green-800',
+  INACTIVE: 'bg-slate-100 text-slate-600',
+  CLOSED: 'bg-blue-100 text-blue-800',
+};
+
+const statusLabels: Record<string, string> = {
+  PROSPECT: 'Prospect',
+  ACTIVE: 'Active',
+  INACTIVE: 'Inactive',
+  CLOSED: 'Closed',
+};
 
 export default function AgentDashboard() {
   const { userId, isLoaded } = useAuth();
@@ -52,152 +90,248 @@ export default function AgentDashboard() {
     );
   }
 
+  const pipelineTotal = dashboardData
+    ? dashboardData.pipeline.prospect + dashboardData.pipeline.active + dashboardData.pipeline.closed
+    : 0;
+
+  const getPipelinePercent = (val: number) =>
+    pipelineTotal > 0 ? Math.round((val / pipelineTotal) * 100) : 0;
+
   return (
-    <div className="min-h-screen">
-      <div className="container mx-auto px-4 py-12">
+    <div className="min-h-screen bg-slate-50/50">
+      <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
-        <div className="mb-12">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3">
-            Dashboard
-          </h1>
-          <p className="text-lg text-slate-600">Welcome back. Here's your business overview.</p>
+        <div className="mb-8 flex items-end justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 mb-1">Dashboard</h1>
+            <p className="text-slate-500">Welcome back. Here&apos;s your business overview.</p>
+          </div>
+          <Link
+            href="/agents/clients/new"
+            className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-blue-600/20 transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Client
+          </Link>
         </div>
 
-        {/* Stats Section */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm animate-pulse h-32 border border-slate-100"></div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-xl shadow-sm animate-pulse h-24 border border-slate-100"></div>
             ))}
           </div>
         ) : dashboardData ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-              {/* Total Clients */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-8 hover:shadow-md transition">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-2a6 6 0 0112 0v2zm6-13.5h0m0 0h0" />
+            {/* Top Stats Row - Compact */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white rounded-xl border border-slate-100 p-4 hover:shadow-md transition">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
+                  <div>
+                    <div className="text-2xl font-bold text-slate-900">{dashboardData.clientCount}</div>
+                    <div className="text-xs text-slate-500">Total Clients</div>
+                  </div>
                 </div>
-                <div className="text-sm font-medium text-slate-500 mb-1">Total Clients</div>
-                <div className="text-4xl font-bold text-slate-900">{dashboardData.clientCount}</div>
-                <p className="text-xs text-slate-400 mt-3">All time clients</p>
               </div>
 
-              {/* Active Clients */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-8 hover:shadow-md transition">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-white rounded-xl border border-slate-100 p-4 hover:shadow-md transition">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-slate-900">{dashboardData.activeClientsCount}</div>
+                    <div className="text-xs text-slate-500">Active Clients</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-100 p-4 hover:shadow-md transition">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
+                  <div>
+                    <div className="text-2xl font-bold text-slate-900">{dashboardData.closedCount}</div>
+                    <div className="text-xs text-slate-500">Deals Closed</div>
+                  </div>
                 </div>
-                <div className="text-sm font-medium text-slate-500 mb-1">Active Clients</div>
-                <div className="text-4xl font-bold text-slate-900">{dashboardData.activeClientsCount}</div>
-                <p className="text-xs text-slate-400 mt-3">Currently engaged</p>
               </div>
 
-              {/* Onboarding */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-8 hover:shadow-md transition">
+              <div className="bg-white rounded-xl border border-slate-100 p-4 hover:shadow-md transition">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-slate-900">{dashboardData.onboardingInProgress}</div>
+                    <div className="text-xs text-slate-500">Onboarding</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Middle Row: Sales Pipeline + Monthly Performance */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              {/* Sales Pipeline */}
+              <div className="lg:col-span-2 bg-white rounded-xl border border-slate-100 p-6">
+                <h2 className="text-lg font-bold text-slate-900 mb-4">Sales Pipeline</h2>
+                <div className="space-y-3">
+                  {[
+                    { label: 'Prospects', value: dashboardData.pipeline.prospect, color: 'bg-yellow-400', lightColor: 'bg-yellow-50' },
+                    { label: 'Active Clients', value: dashboardData.pipeline.active, color: 'bg-green-500', lightColor: 'bg-green-50' },
+                    { label: 'Closed Deals', value: dashboardData.pipeline.closed, color: 'bg-blue-600', lightColor: 'bg-blue-50' },
+                  ].map((stage) => (
+                    <div key={stage.label}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-sm font-medium text-slate-700">{stage.label}</span>
+                        <span className="text-sm font-bold text-slate-900">{stage.value} <span className="text-slate-400 font-normal">({getPipelinePercent(stage.value)}%)</span></span>
+                      </div>
+                      <div className={`h-3 rounded-full ${stage.lightColor} overflow-hidden`}>
+                        <div
+                          className={`h-full rounded-full ${stage.color} transition-all duration-700`}
+                          style={{ width: `${Math.max(getPipelinePercent(stage.value), 2)}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
+                  <span className="text-slate-500">Conversion Rate</span>
+                  <span className="font-bold text-slate-900">{dashboardData.conversionRate}%
+                    <span className="text-slate-400 font-normal ml-1">
+                      (Avg: {Math.round(dashboardData.industryAverages.avgConversionRate * 100)}%)
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Monthly Performance */}
+              <div className="bg-white rounded-xl border border-slate-100 p-6">
+                <h2 className="text-lg font-bold text-slate-900 mb-4">Monthly Performance</h2>
+                <div className="text-center mb-4">
+                  <div className="text-5xl font-bold text-slate-900">{dashboardData.dealsThisMonth}</div>
+                  <div className="text-sm text-slate-500 mt-1">Deals closed this month</div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Last month</span>
+                    <span className="font-semibold text-slate-700">{dashboardData.dealsLastMonth} deals</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Industry avg</span>
+                    <span className="font-semibold text-slate-700">{dashboardData.industryAverages.avgDealsPerMonth}/mo</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Avg days to close</span>
+                    <span className="font-semibold text-slate-700">{dashboardData.industryAverages.avgDaysToClose} days</span>
+                  </div>
+                </div>
+
+                {dashboardData.dealsThisMonth > dashboardData.industryAverages.avgDealsPerMonth ? (
+                  <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                    <span className="text-sm font-semibold text-green-800">
+                      {Math.round(((dashboardData.dealsThisMonth - dashboardData.industryAverages.avgDealsPerMonth) / dashboardData.industryAverages.avgDealsPerMonth) * 100)}% above industry avg
+                    </span>
+                  </div>
+                ) : (
+                  <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                    <span className="text-sm font-semibold text-blue-800">
+                      Keep building your pipeline!
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom Row: Recent Activity + Quick Actions */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Recent Activity */}
+              <div className="bg-white rounded-xl border border-slate-100 p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
+                  <h2 className="text-lg font-bold text-slate-900">Recent Clients</h2>
+                  <Link href="/agents/clients" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    View all
+                  </Link>
                 </div>
-                <div className="text-sm font-medium text-slate-500 mb-1">In Progress</div>
-                <div className="text-4xl font-bold text-slate-900">{dashboardData.onboardingInProgress}</div>
-                <p className="text-xs text-slate-400 mt-3">Onboarding in progress</p>
+                {dashboardData.recentClients.length > 0 ? (
+                  <div className="space-y-3">
+                    {dashboardData.recentClients.map((client) => (
+                      <Link
+                        key={client.id}
+                        href={`/agents/clients/${client.id}`}
+                        className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            {client.name.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900 group-hover:text-blue-700 transition">{client.name}</div>
+                            <div className="text-xs text-slate-400">
+                              {new Date(client.updatedAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusColors[client.status] || 'bg-slate-100 text-slate-600'}`}>
+                          {statusLabels[client.status] || client.status}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-2a6 6 0 0112 0v2zm6-13.5h0" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-slate-500">No clients yet</p>
+                    <Link href="/agents/clients/new" className="text-sm text-blue-600 hover:text-blue-700 font-medium mt-1 inline-block">
+                      Add your first client
+                    </Link>
+                  </div>
+                )}
               </div>
-            </div>
 
-            {/* Quick Actions */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6">Quick Actions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* View Clients */}
-                <Link href="/agents/clients" className="group bg-white rounded-xl shadow-sm border border-slate-100 p-8 hover:shadow-lg hover:border-blue-200 transition">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition">
-                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                      </svg>
-                    </div>
-                    <svg className="w-5 h-5 text-slate-300 group-hover:text-blue-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">View Clients</h3>
-                  <p className="text-slate-600 text-sm">Access your complete client list and manage preferences</p>
-                </Link>
-
-                {/* Add New Client */}
-                <Link href="/agents/clients/new" className="group bg-white rounded-xl shadow-sm border border-slate-100 p-8 hover:shadow-lg hover:border-green-200 transition">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-100 transition">
-                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                    </div>
-                    <svg className="w-5 h-5 text-slate-300 group-hover:text-green-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">Add New Client</h3>
-                  <p className="text-slate-600 text-sm">Create a new onboarding link and start the client intake process</p>
-                </Link>
-
-                {/* Checklists */}
-                <Link href="/agents/checklists" className="group bg-white rounded-xl shadow-sm border border-slate-100 p-8 hover:shadow-lg hover:border-purple-200 transition">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition">
-                      <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                      </svg>
-                    </div>
-                    <svg className="w-5 h-5 text-slate-300 group-hover:text-purple-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">Manage Checklists</h3>
-                  <p className="text-slate-600 text-sm">Track client readiness with customizable checklists</p>
-                </Link>
-
-                {/* Settings */}
-                <Link href="/agents/settings" className="group bg-white rounded-xl shadow-sm border border-slate-100 p-8 hover:shadow-lg hover:border-slate-300 transition">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 bg-slate-50 rounded-lg flex items-center justify-center group-hover:bg-slate-100 transition">
-                      <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                    <svg className="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">Settings</h3>
-                  <p className="text-slate-600 text-sm">Configure MLS integration and account preferences</p>
-                </Link>
-              </div>
-            </div>
-
-            {/* Info Banner */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-blue-900 mb-1">Pro Tip</h3>
-                  <p className="text-sm text-blue-800">Share onboarding links with clients to collect their preferences. They'll complete the intake in just a few minutes!</p>
+              {/* Quick Actions */}
+              <div className="bg-white rounded-xl border border-slate-100 p-6">
+                <h2 className="text-lg font-bold text-slate-900 mb-4">Quick Actions</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { href: '/agents/clients', label: 'View Clients', desc: 'Manage client list', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z', color: 'blue' },
+                    { href: '/agents/clients/new', label: 'Add Client', desc: 'Start onboarding', icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z', color: 'green' },
+                    { href: '/agents/checklists', label: 'Checklists', desc: 'Track readiness', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'purple' },
+                    { href: '/agents/settings', label: 'Settings', desc: 'Configure app', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', color: 'slate' },
+                  ].map((action) => (
+                    <Link
+                      key={action.href}
+                      href={action.href}
+                      className={`group p-4 rounded-xl border border-slate-100 hover:shadow-md hover:border-${action.color}-200 transition-all`}
+                    >
+                      <div className={`w-9 h-9 bg-${action.color}-50 rounded-lg flex items-center justify-center mb-3 group-hover:bg-${action.color}-100 transition`}>
+                        <svg className={`w-5 h-5 text-${action.color}-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={action.icon} />
+                        </svg>
+                      </div>
+                      <div className="text-sm font-semibold text-slate-900">{action.label}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{action.desc}</div>
+                    </Link>
+                  ))}
                 </div>
               </div>
             </div>
