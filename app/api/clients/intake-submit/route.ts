@@ -1,9 +1,21 @@
 import { prisma } from '@/lib/db';
 
+// Normalize price: if user types a small number like 450, treat it as $450,000
+function normalizePrice(value: number | null | undefined): number | null {
+  if (value === null || value === undefined || value === 0) return null;
+  if (value < 10000) return value * 1000;
+  return value;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { clientId, token, preferences } = body;
+    const { clientId, token } = body;
+    const preferences = {
+      ...body.preferences,
+      minPrice: normalizePrice(body.preferences?.minPrice),
+      maxPrice: normalizePrice(body.preferences?.maxPrice),
+    };
 
     // Validate token
     const onboardingLink = await prisma.clientOnboardingLink.findUnique({

@@ -43,18 +43,32 @@ export default function IntakeForm({ clientId, token }: IntakeFormProps) {
   const propertyTypes = watch('propertyType');
   const timeline = watch('timeline');
 
+  // Normalize price: if user types a small number like 450, treat it as $450,000
+  const normalizePrice = (value: number | null | undefined): number | null => {
+    if (value === null || value === undefined || value === 0) return null;
+    // If under 10,000, assume they mean thousands (e.g. 450 → 450,000)
+    if (value < 10000) return value * 1000;
+    return value;
+  };
+
   const onSubmit = async (data: BuyerPreferences) => {
     setIsSubmitting(true);
     setError(null);
 
     try {
+      const normalizedData = {
+        ...data,
+        minPrice: normalizePrice(data.minPrice),
+        maxPrice: normalizePrice(data.maxPrice),
+      };
+
       const response = await fetch('/api/clients/intake-submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clientId,
           token,
-          preferences: data,
+          preferences: normalizedData,
         }),
       });
 
@@ -144,8 +158,8 @@ export default function IntakeForm({ clientId, token }: IntakeFormProps) {
                   <span className="absolute left-4 top-3 text-slate-500">$</span>
                   <input
                     type="number"
-                    {...register('minPrice')}
-                    placeholder="300,000"
+                    {...register('minPrice', { valueAsNumber: true })}
+                    placeholder="300"
                     className="w-full pl-8 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                   />
                 </div>
@@ -156,12 +170,13 @@ export default function IntakeForm({ clientId, token }: IntakeFormProps) {
                   <span className="absolute left-4 top-3 text-slate-500">$</span>
                   <input
                     type="number"
-                    {...register('maxPrice')}
-                    placeholder="800,000"
+                    {...register('maxPrice', { valueAsNumber: true })}
+                    placeholder="800"
                     className="w-full pl-8 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                   />
                 </div>
               </div>
+              <p className="col-span-2 text-xs text-slate-400 -mt-4">Enter in thousands — e.g. &quot;450&quot; means $450,000</p>
             </div>
 
             {/* Move Date */}
