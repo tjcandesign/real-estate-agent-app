@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -11,11 +12,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Note: ClerkProvider will be added in a client wrapper component
-  // This temporary version removes it to test if it's causing 404s
   return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body>{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }
