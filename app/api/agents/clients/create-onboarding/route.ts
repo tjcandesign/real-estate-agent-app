@@ -74,7 +74,8 @@ export async function POST(request: Request) {
       },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // Use NEXT_PUBLIC_APP_URL if set, otherwise derive from the request URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
     const onboardingUrl = `${baseUrl}/clients/onboard/${onboardingLink.token}`;
 
     return Response.json({
