@@ -5,3 +5,4 @@ export async function GET() {
     message: 'Real Estate Agent App is running'
   });
 }
+// Fresh deployment trigger
