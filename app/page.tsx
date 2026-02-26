@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
+import { useAuth } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 function AnimatedGrid({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElement | null> }) {
   useEffect(() => {
@@ -95,6 +97,23 @@ function AnimatedGrid({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElem
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { isSignedIn, isLoaded } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      router.replace('/agents/dashboard');
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  // Show nothing while checking auth or redirecting
+  if (!isLoaded || isSignedIn) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="w-9 h-9 bg-gradient-to-br from-purple-600 via-fuchsia-500 to-pink-500 rounded-xl animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white relative overflow-hidden">

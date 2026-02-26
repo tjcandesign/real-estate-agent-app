@@ -1,14 +1,21 @@
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store, no-cache, must-revalidate',
+  };
+
   try {
     const { userId } = await auth();
 
     if (!userId) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -106,10 +113,9 @@ export async function GET() {
     return new Response(JSON.stringify({
       error: 'Internal server error',
       details: errorMessage,
-      hasDbUrl: !!process.env.DATABASE_URL,
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   }
 }

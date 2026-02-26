@@ -58,20 +58,39 @@ export default function AgentDashboard() {
   useEffect(() => {
     if (!isLoaded || !userId) return;
 
-    const fetchDashboardData = async () => {
-      try {
-        const response = await fetch('/api/agents/dashboard-data');
-        if (!response.ok) throw new Error('Failed to fetch dashboard data');
-        const data = await response.json();
-        setDashboardData(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setIsLoading(false);
+    const fetchDashboardData = async (retries = 3, delay = 1000) => {
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+          const response = await fetch('/api/agents/dashboard-data', {
+            credentials: 'include',
+            headers: { 'Cache-Control': 'no-cache' },
+          });
+          if (response.status === 401 && attempt < retries) {
+            // Auth token might not be ready yet (common on mobile), wait and retry
+            await new Promise(r => setTimeout(r, delay * attempt));
+            continue;
+          }
+          if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(`Server error (${response.status}): ${errorBody}`);
+          }
+          const data = await response.json();
+          setDashboardData(data);
+          setError(null);
+          return;
+        } catch (err) {
+          if (attempt === retries) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+          } else {
+            // Network error, wait and retry
+            await new Promise(r => setTimeout(r, delay * attempt));
+          }
+        }
       }
+      setIsLoading(false);
     };
 
-    fetchDashboardData();
+    fetchDashboardData().finally(() => setIsLoading(false));
   }, [isLoaded, userId]);
 
   if (!isLoaded) {
@@ -82,10 +101,26 @@ export default function AgentDashboard() {
     );
   }
 
+  const retryFetch = () => {
+    setError(null);
+    setIsLoading(true);
+    setDashboardData(null);
+    // Trigger re-fetch by toggling a dummy state
+    window.location.reload();
+  };
+
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg text-red-600">{error}</div>
+        <div className="text-center">
+          <div className="text-lg text-red-600 mb-4">{error}</div>
+          <button
+            onClick={retryFetch}
+            className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
