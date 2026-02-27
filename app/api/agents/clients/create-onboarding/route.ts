@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       agent = await prisma.agent.create({
         data: {
           clerkUserId: userId,
-          email: '', // Will get from Clerk context later
+          email: `${userId}@placeholder.agentpro.app`,
           firstName: '',
           lastName: '',
         },

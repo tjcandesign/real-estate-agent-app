@@ -20,7 +20,7 @@ export async function GET() {
       agent = await prisma.agent.create({
         data: {
           clerkUserId: userId,
-          email: '',
+          email: `${userId}@placeholder.agentpro.app`,
           firstName: '',
           lastName: '',
         },

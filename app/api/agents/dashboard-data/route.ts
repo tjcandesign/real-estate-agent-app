@@ -27,10 +27,16 @@ export async function GET() {
       agent = await prisma.agent.create({
         data: {
           clerkUserId: userId,
-          email: '',
+          email: `${userId}@placeholder.agentpro.app`,
           firstName: '',
           lastName: '',
         },
+      });
+    } else if (!agent.email || agent.email === '') {
+      // Fix legacy agents with empty email
+      agent = await prisma.agent.update({
+        where: { id: agent.id },
+        data: { email: `${userId}@placeholder.agentpro.app` },
       });
     }
 

@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       agent = await prisma.agent.create({
         data: {
           clerkUserId: userId,
-          email: '',
+          email: `${userId}@placeholder.agentpro.app`,
           firstName: '',
           lastName: '',
         },
